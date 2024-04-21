@@ -1,0 +1,8 @@
+<RCC>
+  <qresource prefix="topFrame">
+    <file>img/frame.png</file>
+  </qresource>
+  <qresource prefix="btmFrame">
+    <file>img/bottomFrame.png</file>
+  </qresource>
+</RCC>
