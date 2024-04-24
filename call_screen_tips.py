@@ -45,13 +45,14 @@ class Dota2ScreenTipsHomePage(QMainWindow, Ui_Dota2ScreenTipsDlg):
     wav_refresh_runes = r"wav\Notification_processed_76.wav"
     wav_wait_roshan = r"wav\Notification_processed_74.wav"
     wav_rebirth_roshan = r"wav\Notification_processed_75.wav"
+    wav_mons = r"wav\Notification_processed_71.wav"
     time_to_attention_runes = [
         (2,30,"神符"),
         (3,30,"赏金&莲花"),
         (7,45,"经验符")
         ]
         # 参数：每N分钟提醒|提前M秒提醒|预告音频路径|触发音频路径|神符类型文本
-    time_to_attention_refresh_mons = [53,30]            # 每分钟53秒时拉野|提前30秒出现提示
+    time_to_attention_refresh_mons = [53,20]            # 每分钟53秒时拉野|提前30秒出现提示
     rs_m = -1
     rs_s = -1
     is_countdown_start = False
@@ -150,18 +151,18 @@ class Dota2ScreenTipsHomePage(QMainWindow, Ui_Dota2ScreenTipsDlg):
 
     def set_roshan_text_by_time(self, min, sec):
         text = ""
-        rebirth_sec = self.rs_s
-        rebirth_min = self.rs_m + 8
-        remind_sec = (rebirth_min * 60 + rebirth_sec) - (min * 60 + sec)
-        remind_time_min = int(remind_sec / 60)
-        remind_time_sec = remind_sec % 60
-        remind_time_sec_text = ""
-
-        if remind_time_sec < 10:
-            remind_time_sec_text = "0" + str(remind_time_sec)
-        else:
-            remind_time_sec_text = str(remind_time_sec)
         if self.is_countdown_start:
+            rebirth_sec = self.rs_s
+            rebirth_min = self.rs_m + 8
+            remind_sec = (rebirth_min * 60 + rebirth_sec) - (min * 60 + sec)
+            remind_time_min = int(remind_sec / 60)
+            remind_time_sec = remind_sec % 60
+            remind_time_sec_text = ""
+
+            if remind_time_sec < 10:
+                remind_time_sec_text = "0" + str(remind_time_sec)
+            else:
+                remind_time_sec_text = str(remind_time_sec)
             if 60 * 3 < remind_sec and remind_sec <= 60 * 8:
                 text = "肉山还有%i:%s刷新(盾剩余约%i秒)" % (remind_time_min, remind_time_sec_text, (remind_sec - 60 * 3))
             elif 60 <= remind_sec and remind_sec <= 60 * 3:
@@ -181,6 +182,10 @@ class Dota2ScreenTipsHomePage(QMainWindow, Ui_Dota2ScreenTipsDlg):
                 else:
                     tgt_road_text = "↘"
                 text = "(%i)肉山刷新(%s)" % (180 + remind_sec, tgt_road_text)
+            if remind_sec in [182, 181, 60, 4, 3, 2, 1]:
+                self.play_wav(self.wav_wait_roshan)
+            elif remind_sec in [180, 0]:
+                self.play_wav(self.wav_rebirth_roshan)
         else:
             if min % 10 >= 5: 
                 if min % 10 == 5 and sec <= 12:
@@ -191,10 +196,6 @@ class Dota2ScreenTipsHomePage(QMainWindow, Ui_Dota2ScreenTipsDlg):
             
         self.Text_Line_2.setText(text)
 
-        if remind_sec in [182, 181, 60, 4, 3, 2, 1]:
-            self.play_wav(self.wav_wait_roshan)
-        elif remind_sec in [180, 0]:
-            self.play_wav(self.wav_rebirth_roshan)
     
 
     def clear_roshan_text(self):
@@ -243,11 +244,17 @@ class Dota2ScreenTipsHomePage(QMainWindow, Ui_Dota2ScreenTipsDlg):
 
 
     def set_mons_refresh_text_by_time(self, min, sec):
+        if min > 15:
+            return
+        
         refresh_sec = self.time_to_attention_refresh_mons[0]
         wait2refresh_sec = self.time_to_attention_refresh_mons[1]
         text = ""
+        
         if sec >= refresh_sec - wait2refresh_sec and sec < refresh_sec:
-            text = "%i秒后拉野" % (refresh_sec - sec)
+            text = "前往拉野(%i)" % (refresh_sec - sec)
+            if sec == refresh_sec - wait2refresh_sec:
+                self.play_wav(self.wav_mons)
         self.Text_Line_3.setText(text)
 
 
@@ -357,7 +364,7 @@ class update_gametime_thread(QThread):
         start_time = time.time()
         OCRRes, time_min, time_sec = self.get_time_text()
         end_time = time.time()
-        if OCRRes:
+        if OCRRes: 
             self.time_min = time_min
             time_sec = time_sec + int(end_time - start_time)
             self.time_sec = time_sec
